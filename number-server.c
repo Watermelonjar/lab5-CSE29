@@ -3,7 +3,10 @@
 
 int num = 0;
 
-char const HTTP_404_NOT_FOUND[] = "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\n";
+char const HTTP_200_FOUND[] = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\n";
+
+char const HTTP_404_NOT_FOUND[] = "HTTP/1.1 404 not found\r\nContent-Type: text/plain\r\n\r\n";
+
 
 void handle_404(int client_sock, char *path)  {
     printf("SERVER LOG: Got request for unrecognized path \"%s\"\n", path);
@@ -13,8 +16,18 @@ void handle_404(int client_sock, char *path)  {
     // snprintf includes a null-terminator
 
     // TODO: send response back to client?
+    write(client_sock, HTTP_404_NOT_FOUND, sizeof(HTTP_404_NOT_FOUND));
 }
 
+void handle_200(int client_sock, char *path)  {
+    printf("SERVER LOG: Got request for path \"%s\"\n", path);
+
+    char response_buff[BUFFER_SIZE];
+    snprintf(response_buff, BUFFER_SIZE, "Code 200:\r\nrecognized path \"%s\"\r\n", path);
+    // snprintf includes a null-terminator
+
+    write(client_sock, HTTP_200_FOUND, sizeof(HTTP_200_FOUND));
+}
 
 void handle_response(char *request, int client_sock) {
     char path[256];
@@ -27,7 +40,25 @@ void handle_response(char *request, int client_sock) {
         return;
     }
 
-    handle_404(client_sock, path);
+    if(strcmp(request,"/shownum")){
+	handle_200(client_sock, path);
+    	char number[20]="Your number is";
+	number[14] = ' ';
+	number[15] = num +48;
+	number[16] = '\n';
+	write(client_sock, number, sizeof(number));
+    }else if(strcmp(request,"/increment")){
+	handle_200(client_sock, path);
+	num = num +1;
+    	char number[20]="Your number is";
+	number[14] = ' ';
+	number[15] = num +48;
+	number[16] = '\n';
+	write(client_sock, number, sizeof(number));
+    }else{
+    	handle_404(client_sock, path);
+	}
+
 }
 
 int main(int argc, char *argv[]) {
